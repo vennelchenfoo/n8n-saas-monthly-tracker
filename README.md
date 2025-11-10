@@ -134,6 +134,20 @@ The workflow runs in parallel, querying all platforms simultaneously for maximum
 
 ---
 
+## Workflow Screenshots
+
+### Main Workflow
+<img src="screenshots/main_workflow.png" alt="Main Workflow" width="600">
+
+### DocuSign Sub-Workflow
+<img src="screenshots/docusign_subworkflow.png" alt="DocuSign Sub-Workflow" width="600">
+
+### Email Report Output
+<img src="screenshots/email_report.png" alt="Email Report" width="600">
+
+### Slack Report Output
+<img src="screenshots/Slack_report.png" alt="Slack Report" width="600">
+
 ## Customization
 
 ### Add a New Platform
