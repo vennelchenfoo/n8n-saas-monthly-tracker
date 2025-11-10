@@ -1,0 +1,538 @@
+{
+  "name": "Docusign Report",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1152,
+        2096
+      ],
+      "id": "74d08e48-244b-4309-a7fc-fd2bf2c82942",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c75e43d6-5018-49c6-88f3-5d651e9c55ab",
+              "name": "metric",
+              "value": "compYTD",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        688,
+        2096
+      ],
+      "id": "84c89d53-2f40-4e06-bab2-53e3d6bc967b",
+      "name": "Tag comp compYTD"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Docusign').item.json.accounts[0].base_uri }}/restapi/v2.1/accounts/{{ $('Docusign').item.json.accounts[0].account_id }}/envelopes",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "from_date",
+              "value": "={{ $json.yearFrom }}"
+            },
+            {
+              "name": "to_date",
+              "value": "={{ $json.yearTo }}"
+            },
+            {
+              "name": "from_to_status",
+              "value": "completed"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        464,
+        2000
+      ],
+      "id": "2554e9ee-0a45-48e8-bcbe-87de8f36983a",
+      "name": "sent-this-year2",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "{{$env.DOCUSIGN_OAUTH2_CREDENTIAL_ID}}",
+          "name": "Docusign"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gather everything from the previous Merge\nconst items = $input.all();\n\n// Prefer DocuSign's totalSetSize; fall back to resultSetSize; otherwise count envelopes[]\nfunction countFromJson(j){\n  const n = j?.totalSetSize ?? j?.resultSetSize ?? (Array.isArray(j?.envelopes) ? j.envelopes.length : 0);\n  const num = Number(n);\n  return Number.isFinite(num) ? num : 0;\n}\n\nconst totals = { sentMTD: 0, compMTD: 0, sentYTD: 0, compYTD: 0 };\n\nfor (const it of items) {\n  const j = it.json || {};\n  const m = j.metric;\n  if (!m || !(m in totals)) continue;\n  totals[m] += countFromJson(j);\n}\n\nreturn [{\n  json: {\n    sentThisMonth:      totals.sentMTD,\n    completedThisMonth: totals.compMTD,\n    sentThisYear:       totals.sentYTD,\n    completedThisYear:  totals.compYTD\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1424,
+        1920
+      ],
+      "id": "d65d87d7-b5d5-4c81-99f0-2bc2a9687e15",
+      "name": "count"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c75e43d6-5018-49c6-88f3-5d651e9c55ab",
+              "name": "metric",
+              "value": "sentYTD",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        1904
+      ],
+      "id": "13f23ad6-9d57-4350-84e3-446297c1a1c4",
+      "name": "Tag comp sentYTD"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Docusign').item.json.accounts[0].base_uri }}/restapi/v2.1/accounts/{{ $('Docusign').item.json.accounts[0].account_id }}/envelopes",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "from_date",
+              "value": "={{ $json.yearFrom }}"
+            },
+            {
+              "name": "to_date",
+              "value": "={{ $json.yearTo }}"
+            },
+            {
+              "name": "from_to_status",
+              "value": "sent"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        464,
+        1856
+      ],
+      "id": "7e303af7-1c4f-4ac7-b954-5433d646bb4c",
+      "name": "sent-this-year",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "{{$env.DOCUSIGN_OAUTH2_CREDENTIAL_ID}}",
+          "name": "Docusign"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1056,
+        1856
+      ],
+      "id": "4915e149-b1e7-4577-94a4-7484943d1078",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c75e43d6-5018-49c6-88f3-5d651e9c55ab",
+              "name": "metric",
+              "value": "compMTD",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        1728
+      ],
+      "id": "f1e907f9-d511-483b-9d22-ba36952945be",
+      "name": "Tag comp MTD"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Docusign').item.json.accounts[0].base_uri }}/restapi/v2.1/accounts/{{ $('Docusign').item.json.accounts[0].account_id }}/envelopes",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "from_date",
+              "value": "={{ $json.monthFrom }}"
+            },
+            {
+              "name": "to_date",
+              "value": "={{ $json.monthTo }}"
+            },
+            {
+              "name": "from_to_status",
+              "value": "completed"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        448,
+        1712
+      ],
+      "id": "ad774af6-e19f-464a-9b5a-c92be65f2786",
+      "name": "completed-this-month",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "{{$env.DOCUSIGN_OAUTH2_CREDENTIAL_ID}}",
+          "name": "Docusign"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        928,
+        1680
+      ],
+      "id": "618fa48a-f11b-4ad7-8069-e90d7b4895c9",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "url": "={{$env.DOCUSIGN_USERINFO_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        0,
+        1584
+      ],
+      "id": "2dfff941-e108-4d2c-a021-b4da00fe021b",
+      "name": "Docusign",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "{{$env.DOCUSIGN_OAUTH2_CREDENTIAL_ID}}",
+          "name": "Docusign"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function isoUTC(d){ return d.toISOString().replace(/\\.\\d{3}Z$/, 'Z'); }\n\nconst now = new Date();\n\n// Month start (UTC) -> now\nconst monthFrom = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0));\nconst monthTo   = now;\n\n// Year start (UTC) -> now\nconst yearFrom  = new Date(Date.UTC(now.getUTCFullYear(), 0, 1, 0, 0, 0));\nconst yearTo    = now;\n\nreturn [{\n  json: {\n    monthFrom: isoUTC(monthFrom),\n    monthTo:   isoUTC(monthTo),\n    yearFrom:  isoUTC(yearFrom),\n    yearTo:    isoUTC(yearTo)\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        1584
+      ],
+      "id": "59af7a0d-3e49-4483-941a-6b0da17d2357",
+      "name": "Get envelopes from April 2025"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c75e43d6-5018-49c6-88f3-5d651e9c55ab",
+              "name": "metric",
+              "value": "sentMTD",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        1568
+      ],
+      "id": "51751f65-5708-4540-9686-2aec047ec205",
+      "name": "Tag sent MTD"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Docusign').item.json.accounts[0].base_uri }}/restapi/v2.1/accounts/{{ $('Docusign').item.json.accounts[0].account_id }}/envelopes",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "from_date",
+              "value": "={{ $json.monthFrom }}"
+            },
+            {
+              "name": "to_date",
+              "value": "={{ $json.monthTo }}"
+            },
+            {
+              "name": "from_to_status",
+              "value": "sent"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        448,
+        1552
+      ],
+      "id": "75123db4-8d81-4ae3-8e86-f10469f0604c",
+      "name": "sent-this-month",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "{{$env.DOCUSIGN_OAUTH2_CREDENTIAL_ID}}",
+          "name": "Docusign"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "b7e95aeb-5876-432f-98c2-204a61abba5c",
+      "typeVersion": 1.1,
+      "name": "Start",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -208,
+        1680
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Docusign": {
+      "main": [
+        [
+          {
+            "node": "Get envelopes from April 2025",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get envelopes from April 2025": {
+      "main": [
+        [
+          {
+            "node": "sent-this-month",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "completed-this-month",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "sent-this-year",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "sent-this-year2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sent-this-month": {
+      "main": [
+        [
+          {
+            "node": "Tag sent MTD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sent-this-year": {
+      "main": [
+        [
+          {
+            "node": "Tag comp sentYTD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sent-this-year2": {
+      "main": [
+        [
+          {
+            "node": "Tag comp compYTD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "completed-this-month": {
+      "main": [
+        [
+          {
+            "node": "Tag comp MTD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "count": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag sent MTD": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag comp MTD": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Tag comp sentYTD": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Tag comp compYTD": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Docusign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "PLACEHOLDER_INSTANCE_ID"
+  },
+  "id": "PLACEHOLDER_WORKFLOW_ID",
+  "tags": []
+}

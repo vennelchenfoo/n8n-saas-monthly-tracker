@@ -1,0 +1,1022 @@
+{
+  "name": "SaaS Monthly License Tracker",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst year = now.getUTCFullYear();\nconst month = now.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });\n\nreturn [\n  {\n    json: {\n      reportDate: `${year}-${month}`,\n    },\n  },\n];\n"
+      },
+      "id": "c4b0937c-2463-4f5d-b5d1-9ada04bc00bf",
+      "name": "setReportDate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1488,
+        2928
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true,
+        "filter": {
+          "query": "isSuspended=false"
+        }
+      },
+      "id": "29d8485c-48fb-4d85-b279-deb073194243",
+      "name": "Google Admin — users.list",
+      "type": "n8n-nodes-base.gSuiteAdmin",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        1968
+      ],
+      "credentials": {
+        "gSuiteAdminOAuth2Api": {
+          "id": "{{$env.GOOGLE_WORKSPACE_ADMIN_CREDENTIAL_ID}}",
+          "name": "Google Workspace Admin account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { 'Google Workspace': $input.all().length } }];"
+      },
+      "id": "db3570ff-7429-42d2-b395-3d51862bee0c",
+      "name": "map: Google Workspace",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        1968
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "user",
+        "operation": "getAll",
+        "returnAll": true
+      },
+      "id": "a611c760-295f-4af7-8c5c-a8895cd956fe",
+      "name": "Slack — users.list",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        -592,
+        2160
+      ],
+      "webhookId": "{{$env.SLACK_WEBHOOK_ID}}",
+      "credentials": {
+        "slackApi": {
+          "id": "{{$env.SLACK_API_CREDENTIAL_ID}}",
+          "name": "Slack API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const users = $input.all().filter(u => !u.json.deleted && !u.json.is_bot); return [{ json: { 'Slack': users.length } }];"
+      },
+      "id": "781a18b3-b8dc-457d-97bb-49d37f29bf4a",
+      "name": "map: Slack",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        2160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all(); const total = items.reduce((acc, item) => { return acc + (item?.json['Microsoft Business Basic License'] || 0) + (item?.json['Microsoft Business Basic Standard'] || 0); }, 0); return [{ json: { 'Microsoft 365': total } }];"
+      },
+      "id": "286071d1-91a8-473c-af1a-d138852f933e",
+      "name": "map: M365",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        2352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all(); const uniqueUsers = {}; items.forEach((item) => { if (item?.json?.type === 'person') { uniqueUsers[item?.json?.id] = true; } }); const totalUniqueUsers = Object.keys(uniqueUsers).length; return [{ json: { 'Notion': totalUniqueUsers } }];"
+      },
+      "id": "b3560193-27dd-436e-b394-679ca6a02ac4",
+      "name": "map: Notion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        2544
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { 'ChatGPT Enterprise': $input.first().json['TOTAL SEATS USED'] } }];"
+      },
+      "id": "7ddfe99e-1116-4d16-b6da-c8e585900584",
+      "name": "map: ChatGPT Enterprise",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        2736
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.MOSYLE_API_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{ $json.headers.authorization }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"operation\": \"list\",\n  \"options\": {\n    \"os\": \"mac\",\n    \"page\": 1,\n    \"page_size\": 1\n  }\n}",
+        "options": {}
+      },
+      "id": "ca37ca79-b117-41dd-9c62-570eb8030d7f",
+      "name": "Mosyle — TODO",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -592,
+        2928
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "{{$env.MOSYLE_BEARER_CREDENTIAL_ID}}",
+          "name": "Mosyle Bearer Auth"
+        },
+        "httpHeaderAuth": {
+          "id": "{{$env.MOSYLE_HEADER_CREDENTIAL_ID}}",
+          "name": "Mosyle Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { 'Mosyle': $input.first().json.response[0].rows } }];"
+      },
+      "id": "a6f8bff8-a1eb-4b35-97a3-357991d211c4",
+      "name": "map: Mosyle",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        2928
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { 'Apple Business Manager': $input.first().json['Apple ABM'] } }];"
+      },
+      "id": "fa828ad6-82a5-494e-bc41-978db3a8dc79",
+      "name": "map: Apple Business Manager",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        3120
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.ACTION1_API_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "765569d0-0e37-49f2-aeba-43f0f868dcad",
+      "name": "Action1 — TODO",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1264,
+        3504
+      ],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "{{$env.ACTION1_OAUTH2_CREDENTIAL_ID}}",
+          "name": "Action1 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { 'Action1': parseInt($input.first().json.total_items) } }];"
+      },
+      "id": "a3b70b4e-9822-43bb-a889-6cef40a170de",
+      "name": "map: Action1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        3504
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.FIREFLIES_API_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"query\": \"{ users { user_id email name num_transcripts } }\",\n  \"variables\": {}\n}\n",
+        "options": {}
+      },
+      "id": "7f96651e-8832-4ca5-b56f-ef73ba3fea48",
+      "name": "Fireflies — TODO",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -816,
+        3696
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "{{$env.FIREFLIES_BEARER_CREDENTIAL_ID}}",
+          "name": "Fireflies API (Bearer)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map((item) => item.json); const userCount = items.reduce((count, item) => count + item.data.users.length, 0); return [{ json: { 'Fireflies': userCount } }];"
+      },
+      "id": "379fce59-965e-44bc-bc67-d32fd02297eb",
+      "name": "map: Fireflies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        3696
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 8
+      },
+      "id": "1b1b2419-fa59-450a-8541-517749e60c79",
+      "name": "merge all vendors",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -144,
+        2544
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const reportDate = $('setReportDate').first().json.reportDate;\nconst items = $input.all();\n\n// merge all vendor maps\nconst combined = {};\nitems.forEach(item => { Object.assign(combined, item.json); });\n\n// Pull DocuSign totals from the sub-workflow output (no rewiring needed)\nconst ds = $('Call Docusign Report').first().json || {};\n\nconst report = {\n  'Report Date': reportDate,\n  'Google Workspace Users': combined['Google Workspace'] || 0,\n  'Slack Users': combined['Slack'] || 0,\n  'Microsoft 365 Licenses': combined['Microsoft 365'] || 0,\n  'Notion Users': combined['Notion'] || 0,\n  'ChatGPT Enterprise Users': combined['ChatGPT Enterprise'] || 0,\n  'Mosyle Devices': combined['Mosyle'] || 0,\n  'Apple Business Manager Devices': combined['Apple Business Manager'] || 0,\n  'Action1 Devices': combined['Action1'] || 0,\n  'Fireflies Users': combined['Fireflies'] || 0,\n  'Loom Users': combined['Loom'] || 0,\n\n  // NEW: DocuSign fields\n  'DocuSign Sent (MTD)': ds.sentThisMonth ?? 0,\n  'DocuSign Completed (MTD)': ds.completedThisMonth ?? 0,\n  'DocuSign Sent (YTD)': ds.sentThisYear ?? 0,\n  'DocuSign Completed (YTD)': ds.completedThisYear ?? 0,\n};\n\nreturn [{ json: report }];\n"
+      },
+      "id": "76854ec4-e55e-4d44-9d2e-53a021939406",
+      "name": "compute utilization",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        2640
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "={{$env.GOOGLE_SHEETS_DOCUMENT_ID}}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{$env.GOOGLE_SHEETS_SHEET_NAME}}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "Report Date"
+          ],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "5c71061c-edda-4f49-9857-61e906bcd59e",
+      "name": "Google Sheets — Append",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        304,
+        2640
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "{{$env.GOOGLE_SHEETS_OAUTH2_CREDENTIAL_ID}}",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{$env.SMTP_FROM_EMAIL}}",
+        "toEmail": "={{$env.SMTP_TO_EMAIL}}",
+        "subject": "=Monthly SaaS License Report – {{ $json['Report Date'] }}",
+        "emailType": "html",
+        "message": "=<html>\n<body style=\"font-family: Arial, sans-serif; line-height: 1.6; padding: 20px;\">\n<h2 style=\"color: #333;\">SaaS License Utilization Report</h2>\n<p style=\"font-size: 14px; color: #666;\">Report Date: <strong>{{ $json['Report Date'] }}</strong></p>\n<hr style=\"border: none; border-top: 1px solid #ddd; margin: 20px 0;\">\n\n<h3 style=\"color: #555; margin-top: 20px;\">📊 User & License Counts</h3>\n<table style=\"width: 100%; border-collapse: collapse; margin-top: 10px;\">\n  <tr style=\"background-color: #f9f9f9;\">\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>Google Workspace</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['Google Workspace Users'] }}</td>\n  </tr>\n  <tr>\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>Slack</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['Slack Users'] }}</td>\n  </tr>\n  <tr style=\"background-color: #f9f9f9;\">\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>Microsoft 365</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['Microsoft 365 Licenses'] }}</td>\n  </tr>\n  <tr>\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>Notion</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['Notion Users'] }}</td>\n  </tr>\n  <tr style=\"background-color: #f9f9f9;\">\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>ChatGPT Enterprise</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['ChatGPT Enterprise Users'] }}</td>\n  </tr>\n  <tr>\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>Fireflies</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['Fireflies Users'] }}</td>\n  </tr>\n</table>\n\n<h3 style=\"color: #555; margin-top: 30px;\">💻 Device Management</h3>\n<table style=\"width: 100%; border-collapse: collapse; margin-top: 10px;\">\n  <tr style=\"background-color: #f9f9f9;\">\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>Mosyle (MDM)</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['Mosyle Devices'] }}</td>\n  </tr>\n  <tr>\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>Apple Business Manager</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['Apple Business Manager Devices'] }}</td>\n  </tr>\n  <tr style=\"background-color: #f9f9f9;\">\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>Action1 (RMM)</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['Action1 Devices'] }}</td>\n  </tr>\n</table>\n\n<h3 style=\"color: #555; margin-top: 30px;\">📝 DocuSign Activity</h3>\n<table style=\"width: 100%; border-collapse: collapse; margin-top: 10px;\">\n  <tr style=\"background-color: #f9f9f9;\">\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>Sent (MTD)</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['DocuSign Sent (MTD)'] }}</td>\n  </tr>\n  <tr>\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>Completed (MTD)</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['DocuSign Completed (MTD)'] }}</td>\n  </tr>\n  <tr style=\"background-color: #f9f9f9;\">\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>Sent (YTD)</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['DocuSign Sent (YTD)'] }}</td>\n  </tr>\n  <tr>\n    <td style=\"padding: 10px; border: 1px solid #ddd;\"><strong>Completed (YTD)</strong></td>\n    <td style=\"padding: 10px; border: 1px solid #ddd; text-align: right;\">{{ $json['DocuSign Completed (YTD)'] }}</td>\n  </tr>\n</table>\n\n<hr style=\"border: none; border-top: 1px solid #ddd; margin: 30px 0 20px;\">\n<p style=\"font-size: 12px; color: #999;\">This report is generated automatically. Please review for accuracy.</p>\n</body>\n</html>\n",
+        "options": {}
+      },
+      "id": "f7e732cf-7c76-40b2-8b55-52bc82b54cb6",
+      "name": "Send Email Report",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        304,
+        2832
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "{{$env.SMTP_CREDENTIAL_ID}}",
+          "name": "SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{$env.SLACK_CHANNEL_ID}}",
+          "mode": "id"
+        },
+        "messageType": "block",
+        "blocksUi": {
+          "blocksValues": [
+            {
+              "type": "section",
+              "section": {
+                "text": {
+                  "textType": "mrkdwn",
+                  "text": "=*📊 Monthly SaaS License Report – {{ $json['Report Date'] }}*\n\n*User & License Counts:*\n• Google Workspace: `{{ $json['Google Workspace Users'] }}`\n• Slack: `{{ $json['Slack Users'] }}`\n• Microsoft 365: `{{ $json['Microsoft 365 Licenses'] }}`\n• Notion: `{{ $json['Notion Users'] }}`\n• ChatGPT Enterprise: `{{ $json['ChatGPT Enterprise Users'] }}`\n• Fireflies: `{{ $json['Fireflies Users'] }}`\n\n*Device Management:*\n• Mosyle (MDM): `{{ $json['Mosyle Devices'] }}`\n• Apple Business Manager: `{{ $json['Apple Business Manager Devices'] }}`\n• Action1 (RMM): `{{ $json['Action1 Devices'] }}`\n\n*DocuSign Activity:*\n• Sent (MTD): `{{ $json['DocuSign Sent (MTD)'] }}` | Completed: `{{ $json['DocuSign Completed (MTD)'] }}`\n• Sent (YTD): `{{ $json['DocuSign Sent (YTD)'] }}` | Completed: `{{ $json['DocuSign Completed (YTD)'] }}`\n"
+                }
+              }
+            }
+          ]
+        },
+        "otherOptions": {}
+      },
+      "id": "70a5ac19-dcf5-4398-b1ca-db32a1f58e71",
+      "name": "Slack — Post Summary - IT Channel",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        304,
+        3024
+      ],
+      "webhookId": "{{$env.SLACK_WEBHOOK_ID}}",
+      "credentials": {
+        "slackApi": {
+          "id": "{{$env.SLACK_API_CREDENTIAL_ID}}",
+          "name": "Slack API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.MOSYLE_API_URL}}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "={{$env.MOSYLE_AUTH_TOKEN}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"operation\": \"list\",\n  \"options\": {\n    \"os\": \"mac\",\n    \"page\": 1,\n    \"page_size\": 1\n  }\n}",
+        "options": {}
+      },
+      "id": "c5a71896-18ae-4a6f-85eb-fecd3614b653",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -816,
+        2928
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "{{$env.MOSYLE_HEADER_CREDENTIAL_ID}}",
+          "name": "Mosyle Header Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "user",
+        "operation": "getAll",
+        "returnAll": true
+      },
+      "id": "e51dc9ab-8e95-4ec4-8f41-e1cbe81f1c6c",
+      "name": "Get many users",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -592,
+        2544
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "{{$env.NOTION_API_CREDENTIAL_ID}}",
+          "name": "Notion API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{$env.APPLE_ABM_SHEET_ID}}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{$env.APPLE_ABM_SHEET_NAME}}",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "=\"Devices managed or supervised by another MDM\"",
+              "lookupValue": ""
+            }
+          ]
+        },
+        "options": {
+          "outputFormat": "firstMatch"
+        }
+      },
+      "id": "d30cbb42-edda-42ae-9d36-3ce01dc4d1f4",
+      "name": "Apple ABM",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -592,
+        3120
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "{{$env.GOOGLE_SHEETS_OAUTH2_CREDENTIAL_ID}}",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const orgId = $input.first().json.values?.[0]?.id || null;\nreturn [{ json: { organization_id: orgId } }];\n"
+      },
+      "id": "5f2d2c8d-e0c6-4c18-aed1-1e53f5c79a85",
+      "name": "org_id",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1040,
+        3504
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://app.action1.com/api/3.0/organizations/{{ $json.organization_id }}/endpoints/details?page_size=1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "f8c2a6c5-b78e-4f6a-87f2-4daace0f42d1",
+      "name": "HTTP Request1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -816,
+        3504
+      ],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "{{$env.ACTION1_OAUTH2_CREDENTIAL_ID}}",
+          "name": "Action1 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{$env.CHATGPT_SHEET_ID}}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{$env.CHATGPT_SHEET_NAME}}",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "=\"TOTAL SEATS USED\"",
+              "lookupValue": ""
+            }
+          ]
+        },
+        "options": {
+          "outputFormat": "firstMatch"
+        }
+      },
+      "id": "5fc142e1-b22a-48f8-add2-a868c574fb53",
+      "name": "Get row(s) in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -592,
+        2736
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "{{$env.GOOGLE_SHEETS_OAUTH2_CREDENTIAL_ID}}",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "jsonata",
+        "jsonataExpression": "{ \"Microsoft Business Basic License\": $eval(License1 = 0 ? 0 : License1), \"Microsoft Business Basic Standard\": $eval(License2 = 0 ? 0 : License2) }",
+        "options": {}
+      },
+      "id": "c7113e77-81d4-4e31-bb35-80f15e6a2398",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -592,
+        2352
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtDayOfMonth": 1,
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "id": "1e0d5d9a-6fb6-4edf-bfe5-22e69b4e4e51",
+      "name": "Cron — Monthly 10AM EST",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1712,
+        2928
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "={{$env.DOCUSIGN_SUBWORKFLOW_ID}}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "7ed0e6c3-2e06-4e7a-9813-65738fd0ca62",
+      "name": "Call Docusign Report",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        -1264,
+        2928
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "id": "bfda42ce-3dc2-4b25-8e3c-faf5e46ef9d3",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -368,
+        3504
+      ]
+    }
+  ],
+  "connections": {
+    "setReportDate": {
+      "main": [
+        [
+          {
+            "node": "Google Admin — users.list",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack — users.list",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get many users",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Apple ABM",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Action1 — TODO",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fireflies — TODO",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Call Docusign Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Admin — users.list": {
+      "main": [
+        [
+          {
+            "node": "map: Google Workspace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack — users.list": {
+      "main": [
+        [
+          {
+            "node": "map: Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mosyle — TODO": {
+      "main": [
+        [
+          {
+            "node": "map: Mosyle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Action1 — TODO": {
+      "main": [
+        [
+          {
+            "node": "org_id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fireflies — TODO": {
+      "main": [
+        [
+          {
+            "node": "map: Fireflies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "map: Google Workspace": {
+      "main": [
+        [
+          {
+            "node": "merge all vendors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "map: Slack": {
+      "main": [
+        [
+          {
+            "node": "merge all vendors",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "map: M365": {
+      "main": [
+        [
+          {
+            "node": "merge all vendors",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "map: Notion": {
+      "main": [
+        [
+          {
+            "node": "merge all vendors",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "map: ChatGPT Enterprise": {
+      "main": [
+        [
+          {
+            "node": "merge all vendors",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "map: Mosyle": {
+      "main": [
+        [
+          {
+            "node": "merge all vendors",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "map: Apple Business Manager": {
+      "main": [
+        [
+          {
+            "node": "merge all vendors",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "map: Action1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "map: Fireflies": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "merge all vendors": {
+      "main": [
+        [
+          {
+            "node": "compute utilization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "compute utilization": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets — Append",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack — Post Summary - IT Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Mosyle — TODO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many users": {
+      "main": [
+        [
+          {
+            "node": "map: Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apple ABM": {
+      "main": [
+        [
+          {
+            "node": "map: Apple Business Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "org_id": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "map: Action1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "map: ChatGPT Enterprise",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "map: M365",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron — Monthly 10AM EST": {
+      "main": [
+        [
+          {
+            "node": "setReportDate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Docusign Report": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "merge all vendors",
+            "type": "main",
+            "index": 7
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "PLACEHOLDER_INSTANCE_ID"
+  },
+  "id": "PLACEHOLDER_WORKFLOW_ID",
+  "tags": []
+}
